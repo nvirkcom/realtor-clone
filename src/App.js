@@ -7,9 +7,12 @@ import Profile from "./pages/Profile";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 
+import Header from "./components/Header";
+
 function App() {
   return (
     <BrowserRouter>
+      <Header />
       <Routes>
         <Route element={<ForgotPassword />} path="/forgot-password" />
         <Route element={<Home />} path="/" />
