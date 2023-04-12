@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import OAuth from "../components/OAuth";
+import { createUserWithEmailAndPassword, getAuth, updateProfile } from "firebase/auth";
+import { db } from "../firebase";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 
 export default function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
@@ -11,11 +15,30 @@ export default function SignUp() {
         password: ""
     });
     const { email, name, password } = formData;
+    const navigate = useNavigate();
     function onChange(e) {
         setFormData((prevState) => ({
             ...prevState,
             [e.target.id]: e.target.value
         }));
+    }
+    async function onSubmit(e) {
+        e.preventDefault();
+        try {
+            const auth = getAuth();
+            const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
+            updateProfile(auth.currentUser, { displayName: name });
+            const user = userCredentials.user;
+            const formDataCopy = { ...formData };
+            delete formDataCopy.password;
+            formDataCopy.timestamp = serverTimestamp();
+            await setDoc(doc(db, "users", user.uid), formDataCopy);
+            navigate("/");
+            toast.success("Sign Up Complete");
+        } catch (error) {
+            const toastError = error.code.replace("auth/", "").replace("-", " ").toUpperCase();
+            toast.error(toastError);
+        }
     }
     return (
         <section>
@@ -25,7 +48,7 @@ export default function SignUp() {
                     <img alt="Key" className="rounded-2xl w-full" src="https://images.unsplash.com/flagged/photo-1564767609342-620cb19b2357" />
                 </div>
                 <div className="lg:ml-20 lg:w-[40%] md:w-[67%] w-full">
-                    <form>
+                    <form onSubmit={onSubmit}>
                         <input autoComplete="off" className="bg-white border-gray-300 ease-in-out mb-6 px-4 py-2 rounded text-gray-700 text-xl transition w-full" id="name" onChange={onChange} placeholder="Full Name" type="text" value={name} />
                         <input autoComplete="off" className="bg-white border-gray-300 ease-in-out mb-6 px-4 py-2 rounded text-gray-700 text-xl transition w-full" id="email" onChange={onChange} placeholder="Email Address" type="email" value={email} />
                         <div className="mb-6 relative">
